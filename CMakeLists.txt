@@ -37,7 +37,7 @@ ExternalProject_Add(
     newlib
     PREFIX ${CMAKE_BINARY_DIR}/newlib
     GIT_REPOSITORY https://github.com/Bareflank/newlib.git
-    GIT_TAG newlib-2.5.0-v1.2
+    GIT_TAG v1.2
     CONFIGURE_COMMAND ${CMAKE_BINARY_DIR}/newlib/src/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${NEWLIB_CFLAGS}
     BUILD_COMMAND make
     INSTALL_COMMAND make install
