@@ -71,7 +71,7 @@ ExternalProject_Add(
 ExternalProject_Add(
     download_llvm
     PREFIX ${CMAKE_BINARY_DIR}/download_llvm
-    DOWNLOAD_COMMAND git clone --depth 1 -b release_39 https://github.com/llvm-mirror/llvm.git download_llvm
+    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/llvm.git download_llvm
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -84,7 +84,7 @@ ExternalProject_Add(
 ExternalProject_Add(
     download_libcxxabi
     PREFIX ${CMAKE_BINARY_DIR}/download_libcxxabi
-    DOWNLOAD_COMMAND git clone --depth 1 -b libcxxabi-39-v1 https://github.com/Bareflank/libcxxabi.git download_libcxxabi
+    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/libcxxabi.git download_libcxxabi
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -97,7 +97,7 @@ ExternalProject_Add(
 ExternalProject_Add(
     download_libcxx
     PREFIX ${CMAKE_BINARY_DIR}/download_libcxx
-    DOWNLOAD_COMMAND git clone --depth 1 -b libcxx-39-v1 https://github.com/Bareflank/libcxx.git download_libcxx
+    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/libcxx.git download_libcxx
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -125,7 +125,7 @@ list(APPEND LIBCXXABI_CMAKE_ARGS
 ExternalProject_Add(
     libcxxabi
     PREFIX ${CMAKE_BINARY_DIR}/libcxxabi
-    DOWNLOAD_COMMAND git clone --depth 1 -b libcxxabi-39-v1 https://github.com/Bareflank/libcxxabi.git
+    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/libcxxabi.git
     CMAKE_ARGS ${LIBCXXABI_CMAKE_ARGS}
     DEPENDS bfunwind download_llvm download_libcxx download_libcxxabi
 )
@@ -153,7 +153,7 @@ list(APPEND LIBCXX_CMAKE_ARGS
 ExternalProject_Add(
     libcxx
     PREFIX ${CMAKE_BINARY_DIR}/libcxx
-    DOWNLOAD_COMMAND git clone --depth 1 -b libcxx-39-v1 https://github.com/Bareflank/libcxx.git
+    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/libcxx.git
     CMAKE_ARGS ${LIBCXX_CMAKE_ARGS}
     DEPENDS bfunwind download_llvm download_libcxx download_libcxxabi libcxxabi
 )
@@ -174,9 +174,3 @@ ExternalProject_Add(
     CMAKE_ARGS ${BFSUPPORT_CMAKE_ARGS}
     DEPENDS newlib libcxxabi libcxx
 )
-
-# ------------------------------------------------------------------------------
-# Install
-# ------------------------------------------------------------------------------
-
-install(PROGRAMS link_newlib.sh DESTINATION bin)
