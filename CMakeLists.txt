@@ -1,10 +1,14 @@
-# cmake -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM.txt -DDISABLE_WARNINGS=on ..
+# cmake -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM_40.txt -DDISABLE_WARNINGS=on ..
 
 cmake_minimum_required(VERSION 3.4)
 project(bfsysroot C CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/bfprefix" CACHE PATH "default install path" FORCE)
+    if(NOT WIN32 STREQUAL "1")
+        set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/bfprefix" CACHE PATH "default install path" FORCE)
+    else()
+        set(CMAKE_INSTALL_PREFIX "$ENV{HOMEPATH}/bfprefix" CACHE PATH "default install path" FORCE)
+    endif()
 endif()
 
 include("${CMAKE_INSTALL_PREFIX}/cmake/CMakeGlobal_Project.txt")
@@ -12,6 +16,10 @@ include("${CMAKE_INSTALL_PREFIX}/cmake/CMakeGlobal_Project.txt")
 # ------------------------------------------------------------------------------
 # Newlib
 # ------------------------------------------------------------------------------
+
+set(NEWLIB_CFLAGS
+    "${CMAKE_C_FLAGS} -fvisibility=default"
+)
 
 list(APPEND NEWLIB_ARGS
     "--prefix=${CMAKE_INSTALL_PREFIX}/sysroots/"
@@ -30,10 +38,10 @@ ExternalProject_Add(
     PREFIX ${CMAKE_BINARY_DIR}/newlib
     GIT_REPOSITORY https://github.com/Bareflank/newlib.git
     GIT_TAG newlib-2.5.0-v1.2
-    CONFIGURE_COMMAND ${CMAKE_BINARY_DIR}/newlib/src/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${CMAKE_C_FLAGS}
+    CONFIGURE_COMMAND ${CMAKE_BINARY_DIR}/newlib/src/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${NEWLIB_CFLAGS}
     BUILD_COMMAND make
     INSTALL_COMMAND make install
-    TEST_COMMAND ${CMAKE_SOURCE_DIR}/link_newlib.sh ${CMAKE_C_COMPILER} ${CMAKE_BINARY_DIR} ${BAREFLANK_SYSROOT_PATH}
+    TEST_COMMAND link_newlib.sh ${CMAKE_C_COMPILER} ${CMAKE_BINARY_DIR} ${BAREFLANK_SYSROOT_PATH}
     LOG_CONFIGURE 1
     LOG_BUILD 1
     LOG_INSTALL 1
