@@ -1,6 +1,6 @@
 # cmake -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM_40.txt -DDISABLE_WARNINGS=on ..
 
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.6)
 project(bfsysroot C CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -11,6 +11,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     endif()
 endif()
 
+set(DISABLE_VISIBILITY_HIDDEN true)
 include("${CMAKE_INSTALL_PREFIX}/cmake/CMakeGlobal_Project.txt")
 
 # ------------------------------------------------------------------------------
@@ -18,7 +19,7 @@ include("${CMAKE_INSTALL_PREFIX}/cmake/CMakeGlobal_Project.txt")
 # ------------------------------------------------------------------------------
 
 set(NEWLIB_CFLAGS
-    "${CMAKE_C_FLAGS} -fvisibility=default"
+    "${CMAKE_C_FLAGS} -nostdinc-c"
 )
 
 list(APPEND NEWLIB_ARGS
@@ -36,9 +37,8 @@ list(APPEND NEWLIB_ARGS
 ExternalProject_Add(
     newlib
     PREFIX ${CMAKE_BINARY_DIR}/newlib
-    GIT_REPOSITORY https://github.com/Bareflank/newlib.git
-    GIT_TAG v1.2
-    CONFIGURE_COMMAND ${CMAKE_BINARY_DIR}/newlib/src/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${NEWLIB_CFLAGS}
+    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/newlib
+    CONFIGURE_COMMAND ${CMAKE_INSTALL_PREFIX}/src/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${NEWLIB_CFLAGS}
     BUILD_COMMAND make
     INSTALL_COMMAND make install
     TEST_COMMAND link_newlib.sh ${CMAKE_C_COMPILER} ${CMAKE_BINARY_DIR} ${BAREFLANK_SYSROOT_PATH}
@@ -59,48 +59,9 @@ list(APPEND BFUNWIND_CMAKE_ARGS
 ExternalProject_Add(
     bfunwind
     PREFIX ${CMAKE_BINARY_DIR}/bfunwind
-    GIT_REPOSITORY https://github.com/Bareflank/bfunwind.git
+    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/bfunwind
     CMAKE_ARGS ${BFUNWIND_CMAKE_ARGS}
     DEPENDS newlib
-)
-
-# ------------------------------------------------------------------------------
-# Download LLVM
-# ------------------------------------------------------------------------------
-
-ExternalProject_Add(
-    download_llvm
-    PREFIX ${CMAKE_BINARY_DIR}/download_llvm
-    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/llvm.git download_llvm
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-)
-
-# ------------------------------------------------------------------------------
-# Download Libcxxabi
-# ------------------------------------------------------------------------------
-
-ExternalProject_Add(
-    download_libcxxabi
-    PREFIX ${CMAKE_BINARY_DIR}/download_libcxxabi
-    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/libcxxabi.git download_libcxxabi
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-)
-
-# ------------------------------------------------------------------------------
-# Download Libcxx
-# ------------------------------------------------------------------------------
-
-ExternalProject_Add(
-    download_libcxx
-    PREFIX ${CMAKE_BINARY_DIR}/download_libcxx
-    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/libcxx.git download_libcxx
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
 )
 
 # ------------------------------------------------------------------------------
@@ -109,8 +70,8 @@ ExternalProject_Add(
 
 list(APPEND LIBCXXABI_CMAKE_ARGS
     "-DCMAKE_INSTALL_PREFIX=${BAREFLANK_SYSROOT_PATH}"
-    "-DLLVM_PATH=${CMAKE_BINARY_DIR}/download_llvm/src/download_llvm"
-    "-DLIBCXXABI_LIBCXX_PATH=${CMAKE_BINARY_DIR}/download_libcxx/src/download_libcxx"
+    "-DLLVM_PATH=${CMAKE_INSTALL_PREFIX}/src/llvm"
+    "-DLIBCXXABI_LIBCXX_PATH=${CMAKE_INSTALL_PREFIX}/src/libcxx"
     "-DLIBCXXABI_SYSROOT=${BAREFLANK_SYSROOT_PATH}"
     "-DLIBCXXABI_HAS_PTHREAD_API=ON"
     "-DLLVM_ENABLE_LIBCXX=ON"
@@ -118,16 +79,16 @@ list(APPEND LIBCXXABI_CMAKE_ARGS
     "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_AR=${CMAKE_AR}"
-    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -DCOMPILING_LIBCXX"
-    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -DCOMPILING_LIBCXX"
+    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
+    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -nostdinc-c++"
 )
 
 ExternalProject_Add(
     libcxxabi
     PREFIX ${CMAKE_BINARY_DIR}/libcxxabi
-    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/libcxxabi.git
+    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/libcxxabi
     CMAKE_ARGS ${LIBCXXABI_CMAKE_ARGS}
-    DEPENDS bfunwind download_llvm download_libcxx download_libcxxabi
+    DEPENDS bfunwind
 )
 
 # ------------------------------------------------------------------------------
@@ -136,9 +97,9 @@ ExternalProject_Add(
 
 list(APPEND LIBCXX_CMAKE_ARGS
     "-DCMAKE_INSTALL_PREFIX=${BAREFLANK_SYSROOT_PATH}"
-    "-DLLVM_PATH=${CMAKE_BINARY_DIR}/download_llvm/src/download_llvm"
+    "-DLLVM_PATH=${CMAKE_INSTALL_PREFIX}/src/llvm"
     "-DLIBCXX_CXX_ABI=libcxxabi"
-    "-DLIBCXX_CXX_ABI_INCLUDE_PATHS=${CMAKE_BINARY_DIR}/download_libcxxabi/src/download_libcxxabi/include/"
+    "-DLIBCXX_CXX_ABI_INCLUDE_PATHS=${CMAKE_INSTALL_PREFIX}/src/libcxxabi/include/"
     "-DLIBCXX_SYSROOT=${BAREFLANK_SYSROOT_PATH}"
     "-DLIBCXX_HAS_PTHREAD_API=ON"
     "-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF"
@@ -146,16 +107,16 @@ list(APPEND LIBCXX_CMAKE_ARGS
     "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_AR=${CMAKE_AR}"
-    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -DCOMPILING_LIBCXX"
-    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -DCOMPILING_LIBCXX"
+    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
+    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -nostdinc-c++"
 )
 
 ExternalProject_Add(
     libcxx
     PREFIX ${CMAKE_BINARY_DIR}/libcxx
-    DOWNLOAD_COMMAND git clone --depth 1 -b v1.2 https://github.com/Bareflank/libcxx.git
+    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/libcxx
     CMAKE_ARGS ${LIBCXX_CMAKE_ARGS}
-    DEPENDS bfunwind download_llvm download_libcxx download_libcxxabi libcxxabi
+    DEPENDS bfunwind libcxxabi
 )
 
 # ------------------------------------------------------------------------------
@@ -170,7 +131,7 @@ list(APPEND BFSUPPORT_CMAKE_ARGS
 ExternalProject_Add(
     bfsupport
     PREFIX ${CMAKE_BINARY_DIR}/bfsupport
-    GIT_REPOSITORY https://github.com/Bareflank/bfsupport.git
+    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/bfsupport
     CMAKE_ARGS ${BFSUPPORT_CMAKE_ARGS}
     DEPENDS newlib libcxxabi libcxx
 )
