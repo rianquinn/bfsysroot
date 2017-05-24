@@ -23,7 +23,7 @@ set(NEWLIB_CFLAGS
 )
 
 list(APPEND NEWLIB_ARGS
-    "--prefix=${CMAKE_INSTALL_PREFIX}/sysroots/"
+    "--prefix=${CMAKE_BINARY_DIR}/newlib/prefix"
     "--target=${BAREFLANK_TARGET}"
     "--disable-libgloss"
     "--disable-multilib"
@@ -36,15 +36,31 @@ list(APPEND NEWLIB_ARGS
 
 ExternalProject_Add(
     newlib
-    PREFIX ${CMAKE_BINARY_DIR}/newlib
-    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/newlib
-    CONFIGURE_COMMAND ${CMAKE_INSTALL_PREFIX}/src/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${NEWLIB_CFLAGS}
-    BUILD_COMMAND make
-    INSTALL_COMMAND make install
-    TEST_COMMAND link_newlib.sh ${CMAKE_C_COMPILER} ${CMAKE_BINARY_DIR} ${BAREFLANK_SYSROOT_PATH}
-    LOG_CONFIGURE 1
-    LOG_BUILD 1
-    LOG_INSTALL 1
+    TMP_DIR             ${CMAKE_BINARY_DIR}/newlib/tmp
+    STAMP_DIR           ${CMAKE_BINARY_DIR}/newlib/stamp
+    SOURCE_DIR          ${CMAKE_INSTALL_PREFIX}/src/newlib
+    BINARY_DIR          ${CMAKE_BINARY_DIR}/newlib/build
+    CONFIGURE_COMMAND   ${CMAKE_INSTALL_PREFIX}/src/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${NEWLIB_CFLAGS}
+    BUILD_COMMAND       make
+    INSTALL_COMMAND     make install
+    LOG_CONFIGURE       1
+    LOG_BUILD           1
+    LOG_INSTALL         1
+)
+
+ExternalProject_Add_Step(
+    newlib
+    link
+    COMMAND             eval "${CMAKE_C_COMPILER} -shared `find ${CMAKE_BINARY_DIR}/newlib/build/${BAREFLANK_TARGET}/newlib/libc/ -name \"*.o\" | xargs echo` -o ${CMAKE_BINARY_DIR}/newlib/libc.so"
+    DEPENDEES           install
+)
+
+ExternalProject_Add_Step(
+    newlib
+    prefix_install
+    COMMAND             ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/newlib/prefix/${BAREFLANK_TARGET}/ ${CMAKE_INSTALL_PREFIX}/sysroots/${BAREFLANK_TARGET}/
+    COMMAND             ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/newlib/libc.so ${CMAKE_INSTALL_PREFIX}/sysroots/${BAREFLANK_TARGET}/lib/
+    DEPENDEES           link
 )
 
 # ------------------------------------------------------------------------------
@@ -58,10 +74,10 @@ list(APPEND BFUNWIND_CMAKE_ARGS
 
 ExternalProject_Add(
     bfunwind
-    PREFIX ${CMAKE_BINARY_DIR}/bfunwind
-    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/bfunwind
-    CMAKE_ARGS ${BFUNWIND_CMAKE_ARGS}
-    DEPENDS newlib
+    PREFIX      ${CMAKE_BINARY_DIR}/bfunwind
+    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/bfunwind
+    CMAKE_ARGS  ${BFUNWIND_CMAKE_ARGS}
+    DEPENDS     newlib
 )
 
 # ------------------------------------------------------------------------------
@@ -85,10 +101,10 @@ list(APPEND LIBCXXABI_CMAKE_ARGS
 
 ExternalProject_Add(
     libcxxabi
-    PREFIX ${CMAKE_BINARY_DIR}/libcxxabi
-    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/libcxxabi
-    CMAKE_ARGS ${LIBCXXABI_CMAKE_ARGS}
-    DEPENDS bfunwind
+    PREFIX      ${CMAKE_BINARY_DIR}/libcxxabi
+    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/libcxxabi
+    CMAKE_ARGS  ${LIBCXXABI_CMAKE_ARGS}
+    DEPENDS     bfunwind
 )
 
 # ------------------------------------------------------------------------------
@@ -113,10 +129,10 @@ list(APPEND LIBCXX_CMAKE_ARGS
 
 ExternalProject_Add(
     libcxx
-    PREFIX ${CMAKE_BINARY_DIR}/libcxx
-    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/libcxx
-    CMAKE_ARGS ${LIBCXX_CMAKE_ARGS}
-    DEPENDS bfunwind libcxxabi
+    PREFIX      ${CMAKE_BINARY_DIR}/libcxx
+    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/libcxx
+    CMAKE_ARGS  ${LIBCXX_CMAKE_ARGS}
+    DEPENDS     bfunwind libcxxabi
 )
 
 # ------------------------------------------------------------------------------
@@ -130,8 +146,8 @@ list(APPEND BFSUPPORT_CMAKE_ARGS
 
 ExternalProject_Add(
     bfsupport
-    PREFIX ${CMAKE_BINARY_DIR}/bfsupport
-    SOURCE_DIR ${CMAKE_INSTALL_PREFIX}/src/bfsupport
-    CMAKE_ARGS ${BFSUPPORT_CMAKE_ARGS}
-    DEPENDS newlib libcxxabi libcxx
+    PREFIX      ${CMAKE_BINARY_DIR}/bfsupport
+    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/bfsupport
+    CMAKE_ARGS  ${BFSUPPORT_CMAKE_ARGS}
+    DEPENDS     newlib libcxxabi libcxx
 )
