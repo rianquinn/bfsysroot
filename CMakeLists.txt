@@ -74,9 +74,11 @@ list(APPEND BFUNWIND_CMAKE_ARGS
 
 ExternalProject_Add(
     bfunwind
-    PREFIX      ${CMAKE_BINARY_DIR}/bfunwind
-    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/bfunwind
     CMAKE_ARGS  ${BFUNWIND_CMAKE_ARGS}
+    TMP_DIR     ${CMAKE_BINARY_DIR}/bfunwind/tmp
+    STAMP_DIR   ${CMAKE_BINARY_DIR}/bfunwind/stamp
+    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/bfunwind
+    BINARY_DIR  ${CMAKE_BINARY_DIR}/bfunwind/build
     DEPENDS     newlib
 )
 
@@ -101,9 +103,11 @@ list(APPEND LIBCXXABI_CMAKE_ARGS
 
 ExternalProject_Add(
     libcxxabi
-    PREFIX      ${CMAKE_BINARY_DIR}/libcxxabi
-    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/libcxxabi
     CMAKE_ARGS  ${LIBCXXABI_CMAKE_ARGS}
+    TMP_DIR     ${CMAKE_BINARY_DIR}/libcxxabi/tmp
+    STAMP_DIR   ${CMAKE_BINARY_DIR}/libcxxabi/stamp
+    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/libcxxabi
+    BINARY_DIR  ${CMAKE_BINARY_DIR}/libcxxabi/build
     DEPENDS     bfunwind
 )
 
@@ -129,9 +133,11 @@ list(APPEND LIBCXX_CMAKE_ARGS
 
 ExternalProject_Add(
     libcxx
-    PREFIX      ${CMAKE_BINARY_DIR}/libcxx
-    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/libcxx
     CMAKE_ARGS  ${LIBCXX_CMAKE_ARGS}
+    TMP_DIR     ${CMAKE_BINARY_DIR}/libcxx/tmp
+    STAMP_DIR   ${CMAKE_BINARY_DIR}/libcxx/stamp
+    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/libcxx
+    BINARY_DIR  ${CMAKE_BINARY_DIR}/libcxx/build
     DEPENDS     bfunwind libcxxabi
 )
 
@@ -146,8 +152,23 @@ list(APPEND BFSUPPORT_CMAKE_ARGS
 
 ExternalProject_Add(
     bfsupport
-    PREFIX      ${CMAKE_BINARY_DIR}/bfsupport
-    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/bfsupport
     CMAKE_ARGS  ${BFSUPPORT_CMAKE_ARGS}
+    TMP_DIR     ${CMAKE_BINARY_DIR}/bfsupport/tmp
+    STAMP_DIR   ${CMAKE_BINARY_DIR}/bfsupport/stamp
+    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/bfsupport
+    BINARY_DIR  ${CMAKE_BINARY_DIR}/bfsupport/build
     DEPENDS     newlib libcxxabi libcxx
+)
+
+# ------------------------------------------------------------------------------
+# Clean
+# ------------------------------------------------------------------------------
+
+add_custom_target(super-clean
+    COMMAND cmake --build . --target clean
+    COMMAND cmake --build ${CMAKE_BINARY_DIR}/bfsupport/build --target clean
+    COMMAND cmake --build ${CMAKE_BINARY_DIR}/bfunwind/build --target clean
+    COMMAND cmake --build ${CMAKE_BINARY_DIR}/libcxx/build --target clean
+    COMMAND cmake --build ${CMAKE_BINARY_DIR}/libcxxabi/build --target clean
+    COMMAND make -C ${CMAKE_BINARY_DIR}/newlib/build clean > /dev/null 2>&1
 )
