@@ -15,6 +15,20 @@ set(DISABLE_VISIBILITY_HIDDEN true)
 include("${CMAKE_INSTALL_PREFIX}/cmake/CMakeGlobal_Project.txt")
 
 # ------------------------------------------------------------------------------
+# Source Directory
+# ------------------------------------------------------------------------------
+
+if(NOT BFSOURCE_DIR)
+    set(BFSOURCE_DIR "${CMAKE_INSTALL_PREFIX}/src")
+else()
+    if(NOT IS_ABSOLUTE ${BFSOURCE_DIR})
+        set(BFSOURCE_DIR "${CMAKE_BINARY_DIR}/${BFSOURCE_DIR}")
+    endif()
+endif()
+
+message("-- Source Directory: ${BFSOURCE_DIR}")
+
+# ------------------------------------------------------------------------------
 # Newlib
 # ------------------------------------------------------------------------------
 
@@ -38,9 +52,9 @@ ExternalProject_Add(
     newlib
     TMP_DIR             ${CMAKE_BINARY_DIR}/newlib/tmp
     STAMP_DIR           ${CMAKE_BINARY_DIR}/newlib/stamp
-    SOURCE_DIR          ${CMAKE_INSTALL_PREFIX}/src/newlib
+    SOURCE_DIR          ${BFSOURCE_DIR}/newlib
     BINARY_DIR          ${CMAKE_BINARY_DIR}/newlib/build
-    CONFIGURE_COMMAND   ${CMAKE_INSTALL_PREFIX}/src/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${NEWLIB_CFLAGS}
+    CONFIGURE_COMMAND   ${BFSOURCE_DIR}/newlib/configure "${NEWLIB_ARGS}" CFLAGS_FOR_TARGET=${NEWLIB_CFLAGS}
     BUILD_COMMAND       make
     INSTALL_COMMAND     make install
     LOG_CONFIGURE       1
@@ -77,7 +91,7 @@ ExternalProject_Add(
     CMAKE_ARGS  ${BFUNWIND_CMAKE_ARGS}
     TMP_DIR     ${CMAKE_BINARY_DIR}/bfunwind/tmp
     STAMP_DIR   ${CMAKE_BINARY_DIR}/bfunwind/stamp
-    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/bfunwind
+    SOURCE_DIR  ${BFSOURCE_DIR}/bfunwind
     BINARY_DIR  ${CMAKE_BINARY_DIR}/bfunwind/build
     DEPENDS     newlib
 )
@@ -88,8 +102,8 @@ ExternalProject_Add(
 
 list(APPEND LIBCXXABI_CMAKE_ARGS
     "-DCMAKE_INSTALL_PREFIX=${BAREFLANK_SYSROOT_PATH}"
-    "-DLLVM_PATH=${CMAKE_INSTALL_PREFIX}/src/llvm"
-    "-DLIBCXXABI_LIBCXX_PATH=${CMAKE_INSTALL_PREFIX}/src/libcxx"
+    "-DLLVM_PATH=${BFSOURCE_DIR}/llvm"
+    "-DLIBCXXABI_LIBCXX_PATH=${BFSOURCE_DIR}/libcxx"
     "-DLIBCXXABI_SYSROOT=${BAREFLANK_SYSROOT_PATH}"
     "-DLIBCXXABI_HAS_PTHREAD_API=ON"
     "-DLLVM_ENABLE_LIBCXX=ON"
@@ -106,7 +120,7 @@ ExternalProject_Add(
     CMAKE_ARGS  ${LIBCXXABI_CMAKE_ARGS}
     TMP_DIR     ${CMAKE_BINARY_DIR}/libcxxabi/tmp
     STAMP_DIR   ${CMAKE_BINARY_DIR}/libcxxabi/stamp
-    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/libcxxabi
+    SOURCE_DIR  ${BFSOURCE_DIR}/libcxxabi
     BINARY_DIR  ${CMAKE_BINARY_DIR}/libcxxabi/build
     DEPENDS     bfunwind
 )
@@ -117,9 +131,9 @@ ExternalProject_Add(
 
 list(APPEND LIBCXX_CMAKE_ARGS
     "-DCMAKE_INSTALL_PREFIX=${BAREFLANK_SYSROOT_PATH}"
-    "-DLLVM_PATH=${CMAKE_INSTALL_PREFIX}/src/llvm"
+    "-DLLVM_PATH=${BFSOURCE_DIR}/llvm"
     "-DLIBCXX_CXX_ABI=libcxxabi"
-    "-DLIBCXX_CXX_ABI_INCLUDE_PATHS=${CMAKE_INSTALL_PREFIX}/src/libcxxabi/include/"
+    "-DLIBCXX_CXX_ABI_INCLUDE_PATHS=${BFSOURCE_DIR}/libcxxabi/include/"
     "-DLIBCXX_SYSROOT=${BAREFLANK_SYSROOT_PATH}"
     "-DLIBCXX_HAS_PTHREAD_API=ON"
     "-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF"
@@ -136,7 +150,7 @@ ExternalProject_Add(
     CMAKE_ARGS  ${LIBCXX_CMAKE_ARGS}
     TMP_DIR     ${CMAKE_BINARY_DIR}/libcxx/tmp
     STAMP_DIR   ${CMAKE_BINARY_DIR}/libcxx/stamp
-    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/libcxx
+    SOURCE_DIR  ${BFSOURCE_DIR}/libcxx
     BINARY_DIR  ${CMAKE_BINARY_DIR}/libcxx/build
     DEPENDS     bfunwind libcxxabi
 )
@@ -155,7 +169,7 @@ ExternalProject_Add(
     CMAKE_ARGS  ${BFSUPPORT_CMAKE_ARGS}
     TMP_DIR     ${CMAKE_BINARY_DIR}/bfsupport/tmp
     STAMP_DIR   ${CMAKE_BINARY_DIR}/bfsupport/stamp
-    SOURCE_DIR  ${CMAKE_INSTALL_PREFIX}/src/bfsupport
+    SOURCE_DIR  ${BFSOURCE_DIR}/bfsupport
     BINARY_DIR  ${CMAKE_BINARY_DIR}/bfsupport/build
     DEPENDS     newlib libcxxabi libcxx
 )
