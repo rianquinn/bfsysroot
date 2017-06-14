@@ -1,42 +1,13 @@
 #
 # Configuration
 #
-
 language: cpp
-
 dist: trusty
-sudo: required
 
 #
-# Compilers
+# Build Dependencies
 #
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-trusty-3.8
-      - llvm-toolchain-trusty-3.9
-      - llvm-toolchain-trusty-4.0
-    packages:
-      - clang-3.8
-      - clang-3.9
-      - clang-4.0
-      - clang-tidy-4.0
-      - clang-format-4.0
-      - llvm-4.0
-      - gcc-6
-      - g++-6
-      - nasm
-      - doxygen
-
-#
-# Update Build Environment
-#
-# Currently GCC and CMake are out of date. We require:
-# - GCC 5+
-# - CMake 3.6+
-#
-before_install:
+before_script:
 
   #
   # Path
@@ -44,24 +15,26 @@ before_install:
   - export PATH="$HOME/bfprefix/bin:$PATH"
 
   #
-  # CMake
+  # Build Folder
   #
-  - wget https://cmake.org/files/v3.8/cmake-3.8.0-Linux-x86_64.sh
-  - chmod +x cmake-*-Linux-x86_64.sh
-  - sudo ./cmake-*-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir --skip-license
-
-  #
-  # GCC
-  #
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 100
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 100
-
-#
-# Build Dependencies
-#
-before_script:
   - mkdir build
   - cd build
+
+  #
+  # Update / Install CMake
+  #
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      mkdir -p external/cmake
+      pushd external/cmake
+      wget https://cmake.org/files/v3.8/cmake-3.8.0-Linux-x86_64.sh
+      chmod +x cmake-*-Linux-x86_64.sh
+      ./cmake-*-Linux-x86_64.sh --exclude-subdir --skip-license
+      export PATH="${PWD}/bin:$PATH"
+      popd
+    else
+      if ! brew ls --version cmake &>/dev/null; then brew install cmake; fi
+    fi
 
   #
   # bfsdk
@@ -69,9 +42,14 @@ before_script:
   - git clone https://github.com/Bareflank/bfsdk.git
   - mkdir bfsdk/build
   - pushd bfsdk/build
-  - cmake ..
+  - |
+    cmake \
+      -DCMAKE_C_COMPILER="gcc-6" \
+      -DCMAKE_CXX_COMPILER="g++-6" \
+      ..
   - make install
   - popd
+  - rm -Rf bfsdk
 
 #
 # Build Matrix
@@ -83,6 +61,14 @@ matrix:
   # Git Check
   #
   - os: linux
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+          - nasm
     env:
       - TEST="Git Check"
     script:
@@ -98,28 +84,70 @@ matrix:
   # Build Test (Clang 3.8)
   #
   - os: linux
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-3.8
+        packages:
+          - clang-3.8
+          - gcc-6
+          - g++-6
+          - nasm
     env:
       - TEST="Build Test 3.8"
     script:
-      - cmake -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM_38.txt -DDISABLE_WARNINGS=on ..
+      - |
+        cmake \
+          -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM_38.txt \
+          -DDISABLE_WARNINGS=on \
+          ..
       - make
 
   #
   # Build Test (Clang 3.9)
   #
   - os: linux
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-3.9
+        packages:
+          - clang-3.9
+          - gcc-6
+          - g++-6
+          - nasm
     env:
       - TEST="Build Test 3.9"
     script:
-      - cmake -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM_39.txt -DDISABLE_WARNINGS=on ..
+      - |
+        cmake \
+          -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM_39.txt \
+          -DDISABLE_WARNINGS=on \
+          ..
       - make
 
   #
   # Build Test (Clang 4.0)
   #
   - os: linux
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-4.0
+        packages:
+          - clang-4.0
+          - gcc-6
+          - g++-6
+          - nasm
     env:
       - TEST="Build Test 4.0"
     script:
-      - cmake -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM_40.txt -DDISABLE_WARNINGS=on ..
+      - |
+        cmake \
+          -DCMAKE_TOOLCHAIN_FILE=~/bfprefix/cmake/CMakeToolchain_VMM_40.txt \
+          -DDISABLE_WARNINGS=on \
+          ..
       - make
