@@ -15,6 +15,11 @@ before_script:
   - export PATH="$HOME/bfprefix/bin:$PATH"
 
   #
+  # Output Errors
+  #
+  - export CTEST_OUTPUT_ON_FAILURE=1
+
+  #
   # Build Folder
   #
   - mkdir build
