@@ -28,6 +28,14 @@ endif()
 
 message("-- Source Directory: ${BFSOURCE_DIR}")
 
+if(NOT BFUNWIND_PATH)
+    set(BFUNWIND_PATH ${BFSOURCE_DIR}/bfunwind CACHE PATH "")
+endif()
+
+if(NOT BFSUPPORT_PATH)
+    set(BFSUPPORT_PATH ${BFSOURCE_DIR}/bfsupport CACHE PATH "")
+endif()
+
 # ------------------------------------------------------------------------------
 # Newlib
 # ------------------------------------------------------------------------------
@@ -35,6 +43,12 @@ message("-- Source Directory: ${BFSOURCE_DIR}")
 set(NEWLIB_CFLAGS
     "${CMAKE_C_FLAGS} -nostdinc-c"
 )
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(NEWLIB_CFLAGS
+        "${CMAKE_C_FLAGS} -O3 -DNDEBUG"
+    )
+endif()
 
 list(APPEND NEWLIB_ARGS
     "--prefix=${CMAKE_BINARY_DIR}/newlib/prefix"
@@ -82,8 +96,9 @@ ExternalProject_Add_Step(
 # ------------------------------------------------------------------------------
 
 list(APPEND BFUNWIND_CMAKE_ARGS
-    "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
-    "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 ExternalProject_Add(
@@ -91,7 +106,7 @@ ExternalProject_Add(
     CMAKE_ARGS  ${BFUNWIND_CMAKE_ARGS}
     TMP_DIR     ${CMAKE_BINARY_DIR}/bfunwind/tmp
     STAMP_DIR   ${CMAKE_BINARY_DIR}/bfunwind/stamp
-    SOURCE_DIR  ${BFSOURCE_DIR}/bfunwind
+    SOURCE_DIR  ${BFUNWIND_PATH}
     BINARY_DIR  ${CMAKE_BINARY_DIR}/bfunwind/build
     DEPENDS     newlib
 )
@@ -101,18 +116,19 @@ ExternalProject_Add(
 # ------------------------------------------------------------------------------
 
 list(APPEND LIBCXXABI_CMAKE_ARGS
-    "-DCMAKE_INSTALL_PREFIX=${BAREFLANK_SYSROOT_PATH}"
-    "-DLLVM_PATH=${BFSOURCE_DIR}/llvm"
-    "-DLIBCXXABI_LIBCXX_PATH=${BFSOURCE_DIR}/libcxx"
-    "-DLIBCXXABI_SYSROOT=${BAREFLANK_SYSROOT_PATH}"
-    "-DLIBCXXABI_HAS_PTHREAD_API=ON"
-    "-DLLVM_ENABLE_LIBCXX=ON"
-    "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}"
-    "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    "-DCMAKE_AR=${CMAKE_AR}"
-    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
-    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -nostdinc-c++"
+    -DCMAKE_INSTALL_PREFIX=${BAREFLANK_SYSROOT_PATH}
+    -DLLVM_PATH=${BFSOURCE_DIR}/llvm
+    -DLIBCXXABI_LIBCXX_PATH=${BFSOURCE_DIR}/libcxx
+    -DLIBCXXABI_SYSROOT=${BAREFLANK_SYSROOT_PATH}
+    -DLIBCXXABI_HAS_PTHREAD_API=ON
+    -DLLVM_ENABLE_LIBCXX=ON
+    -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_AR=${CMAKE_AR}
+    -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -nostdinc-c++
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 ExternalProject_Add(
@@ -130,19 +146,20 @@ ExternalProject_Add(
 # ------------------------------------------------------------------------------
 
 list(APPEND LIBCXX_CMAKE_ARGS
-    "-DCMAKE_INSTALL_PREFIX=${BAREFLANK_SYSROOT_PATH}"
-    "-DLLVM_PATH=${BFSOURCE_DIR}/llvm"
-    "-DLIBCXX_CXX_ABI=libcxxabi"
-    "-DLIBCXX_CXX_ABI_INCLUDE_PATHS=${BFSOURCE_DIR}/libcxxabi/include/"
-    "-DLIBCXX_SYSROOT=${BAREFLANK_SYSROOT_PATH}"
-    "-DLIBCXX_HAS_PTHREAD_API=ON"
-    "-DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF"
-    "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}"
-    "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    "-DCMAKE_AR=${CMAKE_AR}"
-    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
-    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -nostdinc-c++"
+    -DCMAKE_INSTALL_PREFIX=${BAREFLANK_SYSROOT_PATH}
+    -DLLVM_PATH=${BFSOURCE_DIR}/llvm
+    -DLIBCXX_CXX_ABI=libcxxabi
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS=${BFSOURCE_DIR}/libcxxabi/include/
+    -DLIBCXX_SYSROOT=${BAREFLANK_SYSROOT_PATH}
+    -DLIBCXX_HAS_PTHREAD_API=ON
+    -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF
+    -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_AR=${CMAKE_AR}
+    -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -nostdinc-c++
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 ExternalProject_Add(
@@ -160,8 +177,9 @@ ExternalProject_Add(
 # ------------------------------------------------------------------------------
 
 list(APPEND BFSUPPORT_CMAKE_ARGS
-    "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
-    "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 ExternalProject_Add(
@@ -169,7 +187,7 @@ ExternalProject_Add(
     CMAKE_ARGS  ${BFSUPPORT_CMAKE_ARGS}
     TMP_DIR     ${CMAKE_BINARY_DIR}/bfsupport/tmp
     STAMP_DIR   ${CMAKE_BINARY_DIR}/bfsupport/stamp
-    SOURCE_DIR  ${BFSOURCE_DIR}/bfsupport
+    SOURCE_DIR  ${BFSUPPORT_PATH}
     BINARY_DIR  ${CMAKE_BINARY_DIR}/bfsupport/build
     DEPENDS     newlib libcxxabi libcxx
 )
